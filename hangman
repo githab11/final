@@ -1,0 +1,155 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Random;
+import javax.sound.sampled.*;
+import java.io.File; // Ensure this import is present and correct
+
+public class main {
+    private int incorrectGuesses = 0; // Track incorrect guesses
+    private JTextArea mainthing; // Display ASCII art
+    private JLabel wordLabel; // Display current progress on the word
+    private String randomWord; // Random word to guess
+    private StringBuilder displayedWord; // Player's view of the word
+
+    public static void main(String[] args) {
+        new main().startGame(); // Start the game
+    }
+
+    public void startGame() {
+        System.out.println("Current working directory: " + System.getProperty("user.dir"));
+
+        // Array of letters A-Z
+        String[] letterArray = {
+            "A", "B", "C", "D", "E", "F", "G", "H", "I",
+            "J", "K", "L", "M", "N", "O", "P", "Q", "R",
+            "S", "T", "U", "V", "W", "X", "Y", "Z"
+        };
+
+        // Array of ASCII art stages for hangman
+        String[] hangmanStages = {
+            " +---+\n     |  \n     |  \n     |  \n     |  \n     |  \n=========",
+            " +---+\n  0  |  \n     |  \n     |  \n     |  \n     |  \n=========",
+            " +---+\n  0  |  \n  |  |  \n     |  \n     |  \n     |  \n=========",
+            " +---+\n  0  |  \n /|  |  \n     |  \n     |  \n     |  \n=========",
+            " +---+\n  0  |  \n /|) |  \n     |  \n     |  \n     |  \n=========",
+            " +---+\n  0  |  \n /|) |  \n /   |  \n     |  \n     |  \n=========",
+            " +---+\n  0  |  \n /|) |  \n /)  |  \n     |  \n     |  \n========="
+        };
+
+        // Load words from file
+        String mainfile = "every_word.txt";
+        List<String> words = null;
+        try {
+            words = Files.readAllLines(Paths.get(mainfile), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(words.size());
+        randomWord = words.get(randomIndex).toUpperCase();
+        System.out.println("Random word: " + randomWord);
+
+        // Initialize displayed word with underscores
+        displayedWord = new StringBuilder();
+        for (int i = 0; i < randomWord.length(); i++) {
+            displayedWord.append("_ ");
+        }
+
+        // Create the game window
+        JFrame frame = new JFrame("Hangman");
+        frame.setSize(600, 400);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(new BorderLayout());
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(3, 9, 3, 3));
+
+        JLabel label = new JLabel("Welcome to my Hangman Game!", SwingConstants.CENTER);
+        label.setFont(new Font("Arial", Font.PLAIN, 18));
+        frame.add(label, BorderLayout.NORTH);
+
+        // Setup hangman sprite using JTextArea
+        mainthing = new JTextArea(hangmanStages[0]);
+        mainthing.setFont(new Font("Monospaced", Font.PLAIN, 18));
+        mainthing.setEditable(false);
+        mainthing.setBackground(null);
+        frame.add(mainthing, BorderLayout.CENTER);
+
+        // Display current progress on the word
+        wordLabel = new JLabel(displayedWord.toString(), SwingConstants.CENTER);
+        wordLabel.setFont(new Font("Arial", Font.PLAIN, 24));
+        frame.add(wordLabel, BorderLayout.CENTER);
+
+        for (String letter : letterArray) {
+            JButton letterButton = new JButton(letter);
+
+            letterButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    String guessedLetter = e.getActionCommand();
+                    letterButton.setEnabled(false); // Disable button after clicking
+
+                    if (randomWord.contains(guessedLetter)) {
+                        updateDisplayedWord(guessedLetter);
+                        wordLabel.setText(displayedWord.toString());
+                        playWav("sounds/correct.wav"); // Play correct sound
+
+                        if (displayedWord.toString().replace(" ", "").equals(randomWord)) {
+                            playWav("sounds/win.wav"); // Play victory sound
+                            JOptionPane.showMessageDialog(frame, "Congratulations! You've won!");
+                            frame.dispose();
+                        }
+                    } else {
+                        incorrectGuesses += 1;
+
+                        if (incorrectGuesses < hangmanStages.length) {
+                            mainthing.setText(hangmanStages[incorrectGuesses]);
+                        }
+
+                        playWav("sounds/Wilhelm_Scream2.wav"); // Play Wilhelm scream for incorrect guess
+
+                        if (incorrectGuesses == hangmanStages.length - 1) {
+                            playWav("sounds/lose.wav"); // Play game-over sound
+                            JOptionPane.showMessageDialog(frame, "Game Over! The word was: " + randomWord);
+                            frame.dispose();
+                        }
+                    }
+                }
+            });
+
+            buttonPanel.add(letterButton);
+        }
+
+        frame.add(buttonPanel, BorderLayout.SOUTH);
+        frame.setVisible(true);
+    }
+
+    // Update displayed word based on correct guesses
+    private void updateDisplayedWord(String guessedLetter) {
+        for (int i = 0; i < randomWord.length(); i++) {
+            if (randomWord.charAt(i) == guessedLetter.charAt(0)) {
+                displayedWord.setCharAt(i * 2, guessedLetter.charAt(0)); // Replace underscore with correct letter
+            }
+        }
+    }
+
+    // Play WAV sound
+    private void playWav(String filePath) {
+        try {
+            java.io.File soundFile = new java.io.File(filePath); // Explicitly specify java.io.File
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            System.out.println("Error playing sound: " + e.getMessage());
+        }
+    }
+}
