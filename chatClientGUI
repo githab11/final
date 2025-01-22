@@ -1,0 +1,117 @@
+import java.io.*;  // For input/output stream classes
+import java.net.*; // For socket programming
+import javax.swing.*; // For GUI components
+import java.awt.*;  // For layout managers
+import java.awt.event.*; // For handling events
+
+public class ChatClient {
+    JFrame frame;                 // Main frame for the chat client
+    JTextArea displayTextArea;    // This will display chat messages
+    JTextField inputField;        // This will capture user input
+    PrintWriter out;              // PrintWriter to send messages to the server
+
+    public ChatClient(PrintWriter out) {
+        this.out = out; // Initialize PrintWriter
+
+        // Set up the frame
+        frame = new JFrame("Chat Client");
+        frame.setSize(400, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Set up the layout
+        frame.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(10, 10, 10, 10);
+
+        // Add a JTextArea at the top to display messages
+        displayTextArea = new JTextArea();
+        displayTextArea.setEditable(false); // Make the chat area non-editable
+        JScrollPane scrollPane = new JScrollPane(displayTextArea);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        frame.add(scrollPane, gbc);
+
+        // Add a JTextField for user input
+        inputField = new JTextField();
+        gbc.gridy = 1;
+        gbc.weighty = 0; // Do not let inputField take up extra space
+        frame.add(inputField, gbc);
+
+        // Set up an action listener for the input field
+        inputField.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String userInput = inputField.getText(); // Get user input from JTextField
+                inputField.setText(""); // Clear the input field
+                sendMessage(userInput); // Send the message to the server
+            }
+        });
+
+        // Show the frame
+        frame.setVisible(true);
+    }
+
+    void sendMessage(String message) {
+        if (message != null && !message.isEmpty()) {
+            displayTextArea.append("You: " + message + "\n");
+            out.println(message); // Send the message to the server
+        }
+    }
+
+    public static void main(String[] args) {
+        String hostname = "127.0.0.1";
+        int port = 2118;
+
+        try {
+            // Create a socket to connect to the server
+            Socket socket = new Socket(hostname, port);
+            System.out.println("Connected to the server.");
+
+            // Create a PrintWriter for sending messages
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+            // Create the ChatClient instance
+            ChatClient client = new ChatClient(out);
+
+            // Start a new thread to handle incoming messages and pass the displayText JTextArea
+            new IncomingMessageHandler(socket, client.displayTextArea).start();
+
+        } catch (IOException e) {
+            System.err.println("Error occurred while running the client:");
+            e.printStackTrace();
+        }
+    }
+}
+
+// Thread class to handle incoming messages
+class IncomingMessageHandler extends Thread {
+    Socket socket;
+    JTextArea displayTextArea;  // JTextArea to update chat messages
+
+    public IncomingMessageHandler(Socket socket, JTextArea displayTextArea) {
+        this.socket = socket; // Store the socket for communication
+        this.displayTextArea = displayTextArea; // Store reference to the JTextArea
+    }
+
+    @Override
+    public void run() {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            String receivedMessage;
+
+            // Continuously listen for incoming messages from the server
+            while ((receivedMessage = in.readLine()) != null) {
+                String message = "Server: " + receivedMessage;
+
+                // Use SwingUtilities.invokeLater to update the JTextArea on the event dispatch thread
+                SwingUtilities.invokeLater(() -> displayTextArea.append(message + "\n"));
+            }
+        } catch (IOException e) {
+            System.err.println("Error occurred in incoming message handler:");
+            e.printStackTrace();
+        }
+    }
+}
