@@ -1,0 +1,60 @@
+package fractal;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class main extends JFrame {
+
+    public main() {
+        setTitle("Sierpinski Triangle");
+        setSize(400, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+
+        MyPanel panel = new MyPanel();
+        add(panel);
+
+        setVisible(true);
+    }
+
+    class MyPanel extends JPanel {
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            
+            // Initial large triangle coordinates
+            int[] xPoints = {200, 150, 250};  // X-coordinates of vertices
+            int[] yPoints = {100, 200, 200};  // Y-coordinates of vertices
+            
+            // Draw the Sierpinski triangle
+            drawSierpinski(g, xPoints, yPoints, 5); // 5 is the depth
+        }
+
+        // Recursive method to draw Sierpinski Triangle
+        private void drawSierpinski(Graphics g, int[] xPoints, int[] yPoints, int depth) {
+            if (depth == 0) {
+                // Base case: Draw thse triangle when recursion depth is 0
+                g.drawPolygon(xPoints, yPoints, 3);
+            } else {
+                // Calculate midpoints of the triangle sides
+                int midX1 = (xPoints[0] + xPoints[1]) / 2;
+                int midY1 = (yPoints[0] + yPoints[1]) / 2;
+
+                int midX2 = (xPoints[1] + xPoints[2]) / 2;
+                int midY2 = (yPoints[1] + yPoints[2]) / 2;
+
+                int midX3 = (xPoints[2] + xPoints[0]) / 2;
+                int midY3 = (yPoints[2] + yPoints[0]) / 2;
+
+                // Recursively draw the three corner triangles
+                drawSierpinski(g, new int[]{xPoints[0], midX1, midX3}, new int[]{yPoints[0], midY1, midY3}, depth - 1);
+                drawSierpinski(g, new int[]{midX1, xPoints[1], midX2}, new int[]{midY1, yPoints[1], midY2}, depth - 1);
+                drawSierpinski(g, new int[]{midX3, midX2, xPoints[2]}, new int[]{midY3, midY2, yPoints[2]}, depth - 1);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(main::new);
+    }
+}
