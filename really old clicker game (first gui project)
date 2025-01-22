@@ -1,0 +1,122 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class Test1 extends JFrame {
+
+    private JButton Abutton; // Main clicking button
+    private JButton Bbutton; // Upgrade CPS Button
+    private JButton Cbutton; // Uprade ClicksPerClick by 1
+    
+    private JLabel Alabel;
+    private JLabel Blabel;
+
+    private int clicks = 0;
+    private int clickspersecond = 0;
+    private int buttonprice = 10;
+    private int clicksperclick = 1;
+    private int clicksprice = 15;
+
+    private Timer timer;
+
+    public Test1() {
+        // Initialize the frame with layout
+        this.setSize(800, 600);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setLayout(new BorderLayout());
+        this.setAlwaysOnTop(true);
+
+        // Add components and panels 
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        Abutton = new JButton("Click me!");
+        Bbutton = new JButton("Upgrade CPS, Price: " + buttonprice);
+        Cbutton = new JButton("Increase Clicks per Click, Price: " + clicksprice);
+
+        Alabel = new JLabel("Number Of Clicks: 0");
+        Blabel = new JLabel("CPS: " + clickspersecond);
+
+        // Layout the components
+        gbc.gridx = 0; gbc.gridy = 0;
+        centerPanel.add(Alabel, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 0;
+        centerPanel.add(Blabel, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 2;
+        centerPanel.add(Abutton, gbc);
+
+        this.add(centerPanel, BorderLayout.CENTER);
+
+        JPanel topLeftPanel = new JPanel();
+        topLeftPanel.setLayout(new BoxLayout(topLeftPanel, BoxLayout.Y_AXIS)); // YAxis alings buttons up and down, x is side to side //
+
+        topLeftPanel.add(Bbutton);
+        topLeftPanel.add(Cbutton);
+
+        this.add(topLeftPanel, BorderLayout.EAST);
+
+        // Add Action Listeners for Game Logic
+        setupListeners();
+        
+        // Start Timer
+        setupTimer();
+
+        this.setVisible(true);
+    }
+
+    private void setupListeners() {
+        Abutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                clicks += clicksperclick;
+                Alabel.setText("Number Of Clicks: " + clicks);
+            }
+        });
+
+        Bbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (clicks >= buttonprice) {
+                    clicks -= buttonprice;
+                    buttonprice = (int) (buttonprice * 1.1);
+                    clickspersecond += 1;
+                    Bbutton.setText("Upgrade CPS, Price: " + buttonprice);
+                    Blabel.setText("CPS: " + clickspersecond);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Not enough clicks!");
+                }
+                Alabel.setText("Number Of Clicks: " + clicks);
+            }
+        });
+
+        Cbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (clicks >= clicksprice) {
+                    clicks -= clicksprice;
+                    clicksprice = (int) (clicksprice * 1.15);
+                    clicksperclick += 1;
+                    Cbutton.setText("Increase Clicks per Click, Price: " + clicksprice);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Not enough clicks!");
+                }
+                Alabel.setText("Number Of Clicks: " + clicks);
+            }
+        });
+    }
+
+    private void setupTimer() {
+        timer = new Timer(1000, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                clicks += clickspersecond;
+                Alabel.setText("Number Of Clicks: " + clicks);
+            }
+        });
+        timer.start();
+    }
+
+    public static void main(String[] args) {
+        new Test1(); // No need to call setVisible(true) again
+    }
+}
