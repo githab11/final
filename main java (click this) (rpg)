@@ -1,0 +1,1624 @@
+package asdasdasdasdasdasdasd; // I should probably change this
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Random;
+import javax.swing.border.*;
+import javax.swing.plaf.basic.BasicProgressBarUI;
+import javax.swing.border.Border;
+import javax.swing.border.TitledBorder;
+import java.util.Random;
+import java.io.*;
+import java.util.Properties;
+
+
+
+public class aasdasdasdasdasd extends JFrame {
+
+	private static final double CLERIC_HEAL_PERCENT = 0.35;           // Increased from 0.25 for more impactful healing
+	private static final int SHIELD_STRONG_BOOST = 2;                 // Increased from 2 for better early defense
+	private static final int SHIELD_WEAK_BOOST = 1;                   // Increased from 1 to maintain relevance
+	private static final int MAX_STRONG_SHIELD_PURCHASES = 2;         // Increased from 3 to extend early game power curve
+	private static final int SHOP_HEALTH_INCREASE = 20;               // Increased from 15 for more impactful upgrades
+	private String playerName = " ";
+	private boolean isPlayerAlive = true;
+	private boolean ownedRelic = false;	
+    // Game state
+    private static final long serialVersionUID = 1L; 
+    private boolean inCombat = false;
+    private Timer exploreTimer;
+    
+    // World state
+    private String[] playerArea = {"Green Meadows", "Gloomy Caves", "Zen's Castle"}; 
+    private int playerAreaAmount = 1;   	     
+    private int combatAnimationSpeed = 400;     
+    
+    // Player Attributes
+    private int playerLevel = 1;
+    private int playerExperience = 0;
+    private int experienceToNextLevel = 85;                          // Decreased from 100 for faster early progression
+    private int playerHealth = 60;                                   // Increased from 50 for better survivability
+    private int playerMaxHealth = 60;                               // Increased from 50
+    private int minSwordDamage = 8;                                 // Decreased from 10 for better scaling
+    private int maxSwordDamage = 12;                               // Decreased from 15 for better scaling
+    private int playerCoins = 20;                                   // Increased from 15 for more early choices
+    private int healthUpAddition = 18;                              // Increased from 15 for more impactful upgrades
+    private int playerExpBoost = 0;
+    private int healthPotionCount = 2;                              // Increased from 1 for better early survival
+    private int armourAmount = 0;
+    private int playerKarma = 0;
+    
+	// Enemy attributes 
+	private int enemyHealth;
+	private int enemyLevel; private String enemyName;
+	private int enemyMinDamage;	private int enemyMaxDamage;	
+	private int minCoins; private int maxCoins;	
+	private int minExp; private int maxExp;
+	
+	
+	// for health bar 
+	private Color darkGreen = new Color(0, 100, 0);
+	private Color darkBackgroundColor = new Color(43, 43, 43);
+	private Color darkTextColor = new Color(255, 255, 255);
+	private Color darkButtonColor = new Color(66, 66, 66);
+	private Color darkPanelColor = new Color(54, 54, 54);
+	private Color lightBackgroundColor = UIManager.getColor("Panel.background");
+	private Color lightTextColor = UIManager.getColor("Label.foreground");
+	
+	
+	
+
+
+	
+    private String gameVersion = "V2.8.23 (DARK MODE!)"; 
+    private JTextArea gameLog;
+    private JButton attackButton, runButton, healButton, shopButton, settingsButton, saveButton, quitButton;
+    private JProgressBar healthBar, expBar;
+    private JLabel statsLabel, enemyLabel;
+    private Random random;
+    private JPanel buttonPanel = new JPanel(new GridLayout(1, 7, 10, 10));
+               
+
+
+    // Shop attributes   
+    private String[] shopItemNames = {
+    	    "Health Potion",
+    	    "Sword Upgrade",
+    	    "Max Health Up",
+    	    "Experience Boost",
+    	    "Armor Piece"
+    	};
+    	private int shopDisplayHP = 25 + playerMaxHealth / 8;
+    	
+    	private String[] shopItemDescriptions = {
+    		    "Restores " + shopDisplayHP + " HP, (Changes depending on health)",
+    		    "+3 to min/max damage",                                     // Increased from +2
+    		    "+" + SHOP_HEALTH_INCREASE + " max health",
+    		    "+75% EXP for 3 battles",                                  // Increased from 50%
+    		    "Reduces damage taken by " + SHIELD_STRONG_BOOST + " for first " + MAX_STRONG_SHIELD_PURCHASES + " plates"
+    		};
+
+    private int[] shopItemCosts = {
+    	    12,     // Health Potion (increased from 10)
+    	    25,     // Sword Upgrade (increased from 20)
+    	    30,     // Max Health Up (increased from 25)
+    	    45,     // Experience Boost (increased from 40)
+    	    55      // Armor Piece (increased from 50)
+    	};
+
+    	private double[] shopItemMultipliers = {
+    	    1.15,   // Health Potion (increased from 1.1)
+    	    1.4,    // Sword Upgrade (decreased from 1.5 for better long-term scaling)
+    	    1.35,   // Max Health Up (decreased from 1.5 for better long-term scaling)
+    	    1.25,   // Experience Boost (increased from 1.2)
+    	    1.45    // Armor Piece (decreased from 1.5 for better long-term scaling)
+    	};
+   private void updateShop() {
+	    String[] shopItemNames = {
+	    	    "Health Potion",
+	    	    "Sword Upgrade",
+	    	    "Max Health Up",
+	    	    "Experience Boost",
+	    	    "Armor Piece"
+	    	};
+	    	 int shopDisplayHP = 25 + playerMaxHealth / 8;
+	    	
+	    	 String[] shopItemDescriptions = {
+	    		    "Restores " + shopDisplayHP + " HP, (Changes depending on health)",
+	    		    "+3 to min/max damage",                                     // Increased from +2
+	    		    "+" + SHOP_HEALTH_INCREASE + " max health",
+	    		    "+75% EXP for 3 battles",                                  // Increased from 50%
+	    		    "Reduces damage taken by " + SHIELD_STRONG_BOOST + " for first " + MAX_STRONG_SHIELD_PURCHASES + " plates"
+	    		};
+
+	     int[] shopItemCosts = {
+	    	    12,     // Health Potion (increased from 10)
+	    	    25,     // Sword Upgrade (increased from 20)
+	    	    30,     // Max Health Up (increased from 25)
+	    	    45,     // Experience Boost (increased from 40)
+	    	    55      // Armor Piece (increased from 50)
+	    	};
+
+	    	 double[] shopItemMultipliers = {
+	    	    1.15,   // Health Potion (increased from 1.1)
+	    	    1.4,    // Sword Upgrade (decreased from 1.5 for better long-term scaling)
+	    	    1.35,   // Max Health Up (decreased from 1.5 for better long-term scaling)
+	    	    1.25,   // Experience Boost (increased from 1.2)
+	    	    1.45    // Armor Piece (decreased from 1.5 for better long-term scaling)
+	    	};
+   }
+   
+    
+    
+
+    	
+    public String findMessage() {
+    		 String gameMessage[] = {
+    		    		"Buy one for the price of two, get one free!",
+    		    		"The guy next to me writing this smells like fish",
+    		    		"Joey",
+    		    		"Eric",
+    		    		"Keeanu reeves wholesome reddit gold",
+    		    		"It's finished!",
+    		    		"JAVA!",
+    		    		"Variables!",
+    		    		"The cure to cancer is....",
+    		    		"One of a kind!",
+    		    		"100% More JFrame!",
+    		    		"More Balancing!",
+    		    		"Bolded!", // might bold this message on the thing idk
+    		    		"Exclusive!",
+    		    		"Not on Steam!",
+    		    		"12 herbs and spices!",
+    		    		"Almost Food!",
+    		    		"Three Colors!",
+    		    		"Like Minecraft!",
+    		    		"Like Terraria",
+    		    		"Like Dark souls!",
+    		    		"Like Elden ring",
+    		    		"Welcome Back!",
+    		    		"1% sugar!",
+    		    		"No sugar!",
+    		    		"All one Class!",
+    		    		"lorem ipsum",
+    		    		"A random number between 1 and 100 is: " + random.nextInt(100) + 1,
+    		    		"Completely offline!",
+    		    		playerName + " Smells like lavender",
+    		    		playerName + " Is really cool",
+    		    		playerName + " Likes to draw and have fun",
+    		    		"99% Sugar!",
+    		    		"Also play Minecraft!",
+    		    		"Also play Terraria!",
+    		    		"im running out of ideas for things to write",
+    		    		" :3 ",
+    		    		" xd ",
+    		    		" :) ",
+    		    		" :-) ",
+    		    		" :( ",
+    		    		" :-( ",
+    		    		
+    		    		// just something small that i thought i'd add
+    		    };
+    		 
+    		return gameMessage[random.nextInt(gameMessage.length)];
+    	}	
+    	 
+   
+    
+
+    public aasdasdasdasdasd() {
+    	random = new Random(); // Initialize the Random object here
+    	
+        initializeFrame();
+        layoutComponents();
+        initializeGame();
+        
+    }
+     
+     
+     private boolean darkModeEnabled = false;
+     
+     private void initializeFrame() {
+    	    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    	    setSize(1000, 700);
+    	    setLocationRelativeTo(null);
+    	    createComponents();
+    	    applyTheme(darkModeEnabled); 
+    	}
+
+
+     private void createComponents() {
+    	    // Create game log
+    	    gameLog = new JTextArea(10, 40);
+    	    gameLog.setEditable(false);
+    	    gameLog.setLineWrap(true);
+    	    gameLog.setWrapStyleWord(true);
+    	    gameLog.setFont(new Font("Courier", Font.PLAIN, 13)); // I like this font
+
+  
+    	    // Create buttons
+    	    attackButton = new JButton("Attack");
+    	    runButton = new JButton("Run");
+    	    healButton = new JButton("Heal " + "(" + healthPotionCount + ")");
+    	    shopButton = new JButton("Shop");
+    	    settingsButton = new JButton("Settings");
+
+    	    // Create progress bars
+    	    healthBar = new JProgressBar(0, playerMaxHealth);
+    	    healthBar.setValue(playerHealth);
+    	    healthBar.setString("Health: " + playerHealth + "/" + playerMaxHealth);
+    	    healthBar.setStringPainted(true);
+  
+    	    healthBar.setUI(new BasicProgressBarUI());
+    	   
+
+    	    expBar = new JProgressBar(0, experienceToNextLevel);
+    	    expBar.setMaximum(experienceToNextLevel);
+    	    expBar.setValue(playerExperience);
+    	    expBar.setString("EXP: " + playerExperience + "/" + experienceToNextLevel);
+    	    expBar.setStringPainted(true);
+    	   
+    	    // Create labels
+    	    statsLabel = new JLabel("Level: " + playerLevel + " | Coins: " + playerCoins);
+    	    enemyLabel = new JLabel("No enemy present");
+
+    	    // Add button listeners
+    	    attackButton.addActionListener(e -> handleAttack());
+    	    runButton.addActionListener(e -> handleRun());
+    	    healButton.addActionListener(e -> handleHeal());
+    	    shopButton.addActionListener(e -> openShop());
+    	    settingsButton.addActionListener(e -> openSettings());
+
+    	    saveButton = new JButton("Save");
+    	    quitButton = new JButton("Save & Quit");
+    	    buttonPanel = new JPanel(new GridLayout(1, 7, 10, 10));
+    	    applyTheme(darkModeEnabled);
+    	    // Add button listeners
+    	    saveButton.addActionListener(e -> saveGame());
+    	    quitButton.addActionListener(e -> {
+    	        saveGame();
+    	        System.exit(0);
+    	    });
+    	    
+    	    
+    	}
+     private void updatePanelTheme(JPanel panel, Color backgroundColor, Color textColor) {
+    	    panel.setBackground(backgroundColor);
+    	    panel.setBorder(BorderFactory.createLineBorder(textColor));
+    	    
+    	    // Update all components within the panel
+    	    for (Component comp : panel.getComponents()) {
+    	        if (comp instanceof JLabel) {
+    	            comp.setForeground(textColor);
+    	        } else if (comp instanceof JPanel) {
+    	            updatePanelTheme((JPanel) comp, backgroundColor, textColor);
+    	        }
+    	    }
+    	}
+     
+     private void applyTheme(boolean darkMode) {
+    	    Color backgroundColor = darkMode ? darkBackgroundColor : lightBackgroundColor;
+    	    Color textColor = darkMode ? darkTextColor : lightTextColor;
+    	    Color buttonColor = darkMode ? darkButtonColor : lightBackgroundColor;
+    	    Color panelColor = darkMode ? darkPanelColor : lightBackgroundColor;
+
+    	    // Update frame and content pane
+    	    getContentPane().setBackground(backgroundColor);
+
+    	    // Update game log
+    	    gameLog.setBackground(darkMode ? new Color(30, 30, 30) : Color.WHITE);
+    	    gameLog.setForeground(textColor);
+    	    gameLog.setCaretColor(textColor);
+
+    	    // Update buttons
+    	    Component[] buttons = buttonPanel.getComponents();
+    	    for (Component comp : buttons) {
+    	        if (comp instanceof JButton) {
+    	            JButton button = (JButton) comp;
+    	            button.setBackground(buttonColor);
+    	            button.setForeground(textColor);
+    	            button.setBorderPainted(!darkMode);
+    	            button.setFocusPainted(!darkMode);
+    	        }
+    	    }
+
+    	    // Update progress bars
+    	    healthBar.setBackground(backgroundColor);
+    	    healthBar.setForeground(darkMode ? new Color(150, 0, 0) : Color.RED);
+    	    expBar.setBackground(backgroundColor);
+    	  
+    	    healthBar.setForeground(textColor);
+    	   
+    	    // Update labels
+    	    statsLabel.setForeground(textColor);
+    	    enemyLabel.setForeground(textColor);
+
+    	    // Update all panels
+    	    updatePanelTheme(buttonPanel, panelColor, textColor);
+    	    SwingUtilities.invokeLater(() -> updateAllPanels(this, panelColor, textColor));
+
+    	    // Refresh UI
+    	    SwingUtilities.updateComponentTreeUI(this);
+    	    repaint();
+    	}
+     private void updateAllPanels(Container container, Color backgroundColor, Color textColor) {
+    	    for (Component comp : container.getComponents()) {
+    	        if (comp instanceof JPanel) {
+    	            JPanel panel = (JPanel) comp;
+    	            panel.setBackground(backgroundColor);
+    	            Border border = panel.getBorder();
+    	            if (border instanceof TitledBorder) {
+    	                TitledBorder titledBorder = (TitledBorder) border;
+    	                titledBorder.setTitleColor(textColor);
+    	            }
+    	            updateAllPanels(panel, backgroundColor, textColor);
+    	        } else if (comp instanceof JLabel) {
+    	            comp.setForeground(textColor);
+    	        } else if (comp instanceof Container) {
+    	            updateAllPanels((Container) comp, backgroundColor, textColor);
+    	        }
+    	    }
+    	}
+     
+     private void layoutComponents() {
+    	    setLayout(new BorderLayout());
+
+    	    // Top panel for player stats
+    	    JPanel statsPanel = new JPanel(new GridLayout(3, 1, 5, 5));
+    	    statsPanel.setBorder(BorderFactory.createTitledBorder("Player Status"));
+    	    statsPanel.add(statsLabel);
+    	    statsPanel.add(healthBar);
+    	    statsPanel.add(expBar);
+
+    	    // Center panel for game log
+    	    JScrollPane scrollPane = new JScrollPane(gameLog);
+    	    
+    	    // Bottom panel for buttons
+    	    buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    	    buttonPanel.add(attackButton);
+    	    buttonPanel.add(runButton);
+    	    buttonPanel.add(healButton);
+    	    buttonPanel.add(shopButton);
+    	    buttonPanel.add(settingsButton);
+    	    buttonPanel.add(saveButton);
+    	    buttonPanel.add(quitButton);
+
+    	    // Enemy panel
+    	    JPanel enemyPanel = new JPanel();
+    	    enemyPanel.setBorder(BorderFactory.createTitledBorder("Enemy Stat's"));
+    	    enemyPanel.add(enemyLabel);
+
+    	    // Add all panels to frame
+    	    add(statsPanel, BorderLayout.NORTH);
+    	    add(scrollPane, BorderLayout.CENTER);
+    	    add(buttonPanel, BorderLayout.SOUTH);
+    	    add(enemyPanel, BorderLayout.EAST);
+    	    
+    	    // Revalidate and repaint to ensure changes take effect
+    	    revalidate();
+    	    repaint();
+    	}
+     
+     
+
+    private void initializeGame() {
+        String name = JOptionPane.showInputDialog(this, "Enter your name:", "Welcome to RPG Adventure", JOptionPane.QUESTION_MESSAGE);
+        if (name == null || name.trim().isEmpty()) {
+        	String possibleNames[] = {"Player", "Guy", "Adventurer", "Hero", "Explorer", "Seeker", "Wanderer", "Rookie", "Pathfinder", "Champion"};
+        	int randomIndex = random.nextInt(possibleNames.length); // Generate a random index
+            name = possibleNames[randomIndex];
+            
+        }
+        playerName = name;
+        playerName = name.substring(0,1).toUpperCase() + name.substring(1).toLowerCase(); 
+        // Math to make the first letter capital
+        updateStats();
+        appendToLog("⚔︎ Welcome, " + playerName + "! Your adventure begins! ⚔︎");
+        startExploration();
+        
+        setTitle("RPG Adventure (" + findMessage() + ") "); // Moved title changer here because sometimes itll display no name
+        updateHealthBar();
+    }
+    
+    
+    
+    private int baseMaxHealth = playerMaxHealth; // Store original max health
+    private int baseDamage = minSwordDamage; // Store original min damage
+    private int baseHealthUpgrade = 10; // Store original health upgrade amount
+
+    // Update the difficulty-related variables
+    private String currentDifficulty = "normal";
+    private double difficultyHealthMultiplier = 1.0;
+    private double difficultyDamageMultiplier = 1.0; // I literally use this variable???
+    										   	    // Why is it showing unused
+
+
+    String developerName = "John RPG";// Me :) (Used to be Jack)
+    // Idk if i should put my last name on here
+    
+    
+    
+    // Declare settings variables
+    private boolean autosaveEnabled = false; // Default: autosave off
+
+    private boolean enemyHealthBarVisible = true; // Default: health bar visible
+    private Timer autosaveTimer; // Timer for autosave
+
+
+
+    // Toggle enemy health bar visibility
+    private void toggleEnemyHealthBar(boolean visible) {
+        enemyHealthBarVisible = visible;
+        enemyLabel.setVisible(visible);
+    }
+
+    // Initialize autosave
+    private void initializeAutosave() {
+        if (autosaveTimer != null) {
+            autosaveTimer.stop();
+        }
+
+        if (autosaveEnabled) {
+            autosaveTimer = new Timer(30000, e -> saveGame()); // Autosave every 30 seconds
+            autosaveTimer.start();
+            appendToLog("Autosave enabled.");
+        } else {
+            appendToLog("Autosave disabled.");
+        }
+    }
+    
+    private void openSettings() {
+        JDialog settingsDialog = new JDialog(this, "Settings", true);
+        settingsDialog.setSize(450, 700);
+        settingsDialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
+        // Game Info Panel
+        JPanel gameInfoPanel = new JPanel(new GridLayout(0, 1, 2, 2));
+        gameInfoPanel.setBorder(BorderFactory.createTitledBorder("Game Information"));
+
+        String gameInfoText = String.format(
+            "<html><body style='width: %dpx'>" +
+            "Game Version: %s<br><br>" +
+            "Player Stats:<br>" +
+            "Name: %s<br>" +
+            "Level: %d<br>" +
+            "Total Coins: %d<br>" +
+            "Current HP: %d/%d<br>" +
+            "Developer: %s</body></html>",
+            350,
+            gameVersion,
+            playerName,
+            playerLevel,
+            playerCoins,
+            playerHealth,
+            playerMaxHealth,
+            developerName
+        );
+
+        JLabel gameInfo = new JLabel(gameInfoText);
+        gameInfoPanel.add(gameInfo);
+
+        // Dark Mode Panel
+        JPanel darkModePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        darkModePanel.setBorder(BorderFactory.createTitledBorder("Theme Settings"));
+        JCheckBox darkModeCheckbox = new JCheckBox("Enable Dark Mode", darkModeEnabled);
+        darkModePanel.add(darkModeCheckbox);
+
+        // Autosave Panel
+        JPanel autosavePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        autosavePanel.setBorder(BorderFactory.createTitledBorder("Autosave"));
+        JCheckBox autosaveCheckbox = new JCheckBox("Enable Autosave", autosaveEnabled);
+        autosavePanel.add(autosaveCheckbox);
+
+        // Enemy Health Bar Panel
+        JPanel healthBarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        healthBarPanel.setBorder(BorderFactory.createTitledBorder("Enemy Health Bar"));
+        JCheckBox healthBarCheckbox = new JCheckBox("Show Enemy Health Bar", enemyHealthBarVisible);
+        healthBarCheckbox.addActionListener(e -> toggleEnemyHealthBar(healthBarCheckbox.isSelected()));
+        healthBarPanel.add(healthBarCheckbox);
+
+        // Display Settings
+        JPanel displayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        displayPanel.setBorder(BorderFactory.createTitledBorder("Display Settings"));
+        JLabel fontLabel = new JLabel("Game Log Font Size: ");
+        String[] fontSizes = {"10", "11", "12", "13", "14", "15", "16", "17"};
+        JComboBox<String> fontSizeCombo = new JComboBox<>(fontSizes);
+        fontSizeCombo.setSelectedItem(String.valueOf(gameLog.getFont().getSize()));
+        JCheckBox boldCheckbox = new JCheckBox("Bold Font", gameLog.getFont().isBold());
+        displayPanel.add(fontLabel);
+        displayPanel.add(fontSizeCombo);
+        displayPanel.add(boldCheckbox);
+
+        // Game Speed Settings
+        JPanel speedPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        speedPanel.setBorder(BorderFactory.createTitledBorder("Game Speed Settings"));
+        JLabel speedLabel = new JLabel("Combat Animation Speed: ");
+        String[] speeds = {"Fast", "Normal", "Slow", "Instant"};
+        JComboBox<String> speedCombo = new JComboBox<>(speeds);
+        speedCombo.setSelectedItem("Normal");
+        speedPanel.add(speedLabel);
+        speedPanel.add(speedCombo);
+
+        // Difficulty Settings
+        JPanel difficultyPanel = new JPanel(new GridLayout(0, 1));
+        difficultyPanel.setBorder(BorderFactory.createTitledBorder("Difficulty Settings"));
+        ButtonGroup difficultyGroup = new ButtonGroup();
+        JRadioButton easyButton = new JRadioButton("Easy (More Health, Less Enemy Damage)");
+        JRadioButton normalButton = new JRadioButton("Normal", true);
+        JRadioButton hardButton = new JRadioButton("Hard (Less Health, More Enemy Damage)");
+        difficultyGroup.add(easyButton);
+        difficultyGroup.add(normalButton);
+        difficultyGroup.add(hardButton);
+        difficultyPanel.add(easyButton);
+        difficultyPanel.add(normalButton);
+        difficultyPanel.add(hardButton);
+
+        // Add panels to main panel
+        gbc.gridy = 0;
+        mainPanel.add(gameInfoPanel, gbc);
+        gbc.gridy = 1;
+        mainPanel.add(autosavePanel, gbc);
+        gbc.gridy = 2;
+        mainPanel.add(healthBarPanel, gbc);
+        gbc.gridy = 3;
+        mainPanel.add(displayPanel, gbc);
+        gbc.gridy = 4;
+        mainPanel.add(speedPanel, gbc);
+        gbc.gridy = 5;
+        mainPanel.add(difficultyPanel, gbc);
+        gbc.gridy = 6;
+        mainPanel.add(darkModePanel, gbc);
+
+        // Button Panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        JButton saveButton = new JButton("Save Settings");
+        JButton cancelButton = new JButton("Cancel");
+
+        saveButton.addActionListener(e -> {
+            String speed = (String) speedCombo.getSelectedItem();
+            switch (speed) {
+                case "Fast": setCombatSpeed(250); break;
+                case "Normal": setCombatSpeed(500); break;
+                case "Slow": setCombatSpeed(750); break;
+                case "Instant": setCombatSpeed(0); break;
+            }
+
+            if (easyButton.isSelected()) setDifficulty("easy", false);
+            else if (normalButton.isSelected()) setDifficulty("normal", false);
+            else if (hardButton.isSelected()) setDifficulty("hard", false);
+
+            int size = Integer.parseInt((String) fontSizeCombo.getSelectedItem());
+            int style = boldCheckbox.isSelected() ? Font.BOLD : Font.PLAIN;
+            gameLog.setFont(new Font("Courier", style, size));
+
+            autosaveEnabled = autosaveCheckbox.isSelected();
+            enemyHealthBarVisible = healthBarCheckbox.isSelected();
+            darkModeEnabled = darkModeCheckbox.isSelected();
+            applyTheme(darkModeEnabled);
+            updateHealthBar();
+
+            settingsDialog.dispose();
+            appendToLog("Settings saved successfully!");
+        });
+
+        cancelButton.addActionListener(e -> settingsDialog.dispose());
+
+        buttonPanel.add(saveButton);
+        buttonPanel.add(cancelButton);
+
+        settingsDialog.add(mainPanel, BorderLayout.CENTER);
+        settingsDialog.add(buttonPanel, BorderLayout.SOUTH);
+        settingsDialog.setVisible(true);
+    }
+    private void setDifficulty(String difficulty, boolean isRestoring) {
+        if (difficulty.equals(currentDifficulty) && !isRestoring) return;
+        
+//        // Reset to base values first
+//        playerMaxHealth = baseMaxHealth;
+//        healthUpAddition = baseHealthUpgrade;
+//        minSwordDamage = baseDamage;
+//        maxSwordDamage = baseDamage + 5;
+
+        // Apply new difficulty multipliers
+        switch(difficulty) {
+            case "easy":
+                difficultyHealthMultiplier = 1.2;
+                difficultyDamageMultiplier = 0.9;
+                if (!isRestoring) appendToLog("Difficulty set to Easy - Your maximum health has increased!");
+                break;
+            case "normal":
+                difficultyHealthMultiplier = 1.0;
+                difficultyDamageMultiplier = 1.0;
+                if (!isRestoring) appendToLog("Difficulty set to Normal - Stats reset to default values.");
+                break;
+            case "hard":
+                difficultyHealthMultiplier = 0.8;
+                difficultyDamageMultiplier = 1.2;
+                if (!isRestoring) appendToLog("Difficulty set to Hard - Combat will be more challenging!");
+                
+                break;
+        }
+        
+        // Apply multipliers
+        playerMaxHealth = (int)(playerMaxHealth * difficultyHealthMultiplier);
+        healthUpAddition = (int)(healthUpAddition * difficultyHealthMultiplier);
+        playerHealth = Math.min(playerHealth, playerMaxHealth);
+        
+        currentDifficulty = difficulty;
+        updateAll();
+    }
+
+    
+    private void setCombatSpeed(int speed) {
+        this.combatAnimationSpeed = speed;
+        appendToLog("Combat animation speed updated!");
+    }
+    int secondTickTracker = 0;  
+    private Timer walkTimer; // walk timer so its cool and dynamic type beat 
+    private String currentArea = "Green Meadows";
+    private int areaProgress = 0;
+    private final int STEPS_TO_NEXT_AREA = 10; 
+    // V important variable... touch this only if u wanna make the game easier/harder
+    
+
+    // Replace your startExploration() method with this simpler version
+    private void startExploration() {
+        // Timer for combat and events
+        exploreTimer = new Timer(4000, e -> {  // Every 4 seconds
+            if (isPlayerAlive && !inCombat) {
+                secondTickTracker++;
+                updateAll();
+                
+                // Check if player should move to next area
+                if (areaProgress >= STEPS_TO_NEXT_AREA) {
+                    moveToNextArea();
+                    return;
+                }
+
+                // 80% chance for combat, 20% for event
+                int event = random.nextInt(100) + 1;
+                if (event <= 80) {
+                    setupEnemy();
+                } else {
+                    triggerRandomEvent();
+                }
+            }
+        });
+        exploreTimer.start();
+        
+        // Timer for walking messages
+        walkTimer = new Timer(3000, e -> {  // Every 3 seconds
+            if (isPlayerAlive && !inCombat) {
+                if (secondTickTracker % 2 == 0) { // If number is even
+                    String walkMessage = "👟 Walking through " + currentArea;
+                    // Add 1-3 dots randomly
+                    for (int i = 0; i < random.nextInt(3) + 1; i++) {
+                        walkMessage += ".";
+                    }
+                    appendToLog(walkMessage);
+                    
+                    // Increase progress towards next area
+                    areaProgress++;
+                    appendToLog("Progress: " + areaProgress + "/" + STEPS_TO_NEXT_AREA);
+                }
+            }
+        });
+        walkTimer.start();
+    }
+
+    // Add this new method to handle area transitions
+    private void moveToNextArea() {
+        areaProgress = 0;  // Reset progress
+        
+        // Move to next area
+        if (currentArea.equals("Green Meadows")) {
+            currentArea = "Gloomy Caves";
+            appendToLog("🌟 You've entered the Gloomy Caves!");
+            makeEnemiesStronger(1.5);  // Make enemies 50% stronger
+        }
+        else if (currentArea.equals("Gloomy Caves")) {
+            currentArea = "Zen's Castle";
+            appendToLog("🏰 You've reached Zen's Castle!");
+            makeEnemiesStronger(2.0);  // Make enemies twice as strong
+        }
+    }
+
+    // Add this helper method to adjust enemy strength
+    private void makeEnemiesStronger(double multiplier) {
+        // Increase enemy rewards
+        minExp = (int)(minExp * multiplier);
+        maxExp = (int)(maxExp * multiplier);
+        minCoins = (int)(minCoins * multiplier);
+        maxCoins = (int)(maxCoins * multiplier);
+    }
+
+    private void setupEnemy() {
+        // Base stats that will be modified based on area and level
+        if (!inCombat) {
+            determineEnemyType();
+            calculateEnemyStats();
+            applyAreaModifiers();
+            
+            enemyLabel.setText("<html>" + enemyName + "<br>Health: " + enemyHealth + 
+                "<br>Damage: " + enemyMinDamage + "-" + enemyMaxDamage + 
+                "<br>Level: " + enemyLevel + "</html>");
+            
+            appendToLog("✨ You encountered a " + enemyName + " (Level " + enemyLevel + ")! ✨");
+        }
+        
+        inCombat = true;
+        shopButton.setEnabled(false);
+        setCombatButtonsEnabled(true);
+    }
+
+    private void determineEnemyType() {
+        // Define enemy pools for each area
+        String[] meadowEnemies = {"Slime", "Goblin", "Bandit", "Young Wolf", "Small Bear", "Rookie Wizard"};
+        String[] caveEnemies = {"Cave Troll", "Dark Priest", "Skeletal Warrior", "Cave Spider", "Wizard"};
+        String[] castleEnemies = {"Royal Guard", "Dark Knight", "Court Wizard", "Master Archer"};
+        
+        // Select enemy pool based on current area
+        String[] currentEnemyPool;
+        switch(currentArea) {
+            case "Gloomy Caves":
+                currentEnemyPool = caveEnemies;
+                break;
+            case "Zen's Castle":
+                currentEnemyPool = castleEnemies;
+                break;
+            default: // Green Meadows
+                currentEnemyPool = meadowEnemies;
+                break;
+        }
+        
+        // Select random enemy from pool
+        enemyName = currentEnemyPool[random.nextInt(currentEnemyPool.length)];
+    }
+
+    private void calculateEnemyStats() {
+        // Calculate enemy level based on area and player level
+        int minLevel = 1;
+        int levelVariance = 2;
+        
+        switch(currentArea) {
+            case "Gloomy Caves":
+                minLevel = 5;
+                levelVariance = 3;
+                break;
+            case "Zen's Castle":
+                minLevel = 7;
+                levelVariance = 4;
+                break;
+        }
+        
+        // Enemy level will be close to player level but within area bounds
+        enemyLevel = Math.max(minLevel, playerLevel + random.nextInt(levelVariance) - random.nextInt(levelVariance));
+        
+        // Base stats scaled by level
+        calculateBaseStats();
+        
+        // Apply enemy type modifiers
+        applyEnemyTypeModifiers();
+    }
+
+    private void calculateBaseStats() {
+        // Base enemy stats based on area and level
+        switch(currentArea) {
+            case "Green Meadows":
+                enemyHealth = 30 + (enemyLevel * 5);
+                enemyMinDamage = 4 + (enemyLevel);
+                enemyMaxDamage = 7 + (enemyLevel);
+                minCoins = 8 + (enemyLevel);
+                maxCoins = 14 + (enemyLevel * 2);
+                minExp = 20 + (enemyLevel * 3);
+                maxExp = 30 + (enemyLevel * 3);
+                break;
+                
+            case "Gloomy Caves":
+                enemyHealth = 45 + (enemyLevel * 6);
+                enemyMinDamage = 6 + (enemyLevel);
+                enemyMaxDamage = 10 + (enemyLevel);
+                minCoins = 15 + (enemyLevel * 2);
+                maxCoins = 25 + (enemyLevel * 3);
+                minExp = 35 + (enemyLevel * 4);
+                maxExp = 50 + (enemyLevel * 4);
+                break;
+                
+            case "Zen's Castle":
+                enemyHealth = 65 + (enemyLevel * 7);
+                enemyMinDamage = 9 + (enemyLevel);
+                enemyMaxDamage = 13 + (enemyLevel);
+                minCoins = 25 + (enemyLevel * 3);
+                maxCoins = 40 + (enemyLevel * 4);
+                minExp = 50 + (enemyLevel * 5);
+                maxExp = 70 + (enemyLevel * 5);
+                break;
+        }
+    }
+
+    private void applyEnemyTypeModifiers() {
+        switch(enemyName) {
+            case "Slime":
+                enemyHealth = (int)(enemyHealth * 1.3);
+                enemyMinDamage = (int)(enemyMinDamage * 0.8);
+                enemyMaxDamage = (int)(enemyMaxDamage * 0.8);
+                break;
+                
+            case "Goblin":
+            case "Bandit":
+                enemyHealth = (int)(enemyHealth * 0.8);
+                minCoins = (int)(minCoins * 1.5);
+                maxCoins = (int)(maxCoins * 1.5);
+                break;
+                
+            case "Cave Troll":
+                enemyHealth = (int)(enemyHealth * 1.5);
+                enemyMinDamage = (int)(enemyMinDamage * 0.9);
+                enemyMaxDamage = (int)(enemyMaxDamage * 0.9);
+                break;
+                // Figured out how to save space by letting the switch flow.. yeah im pretty smart.
+            case "Dark Priest":
+            case "Court Wizard":
+                enemyHealth = (int)(enemyHealth * 0.8);
+                enemyMinDamage = (int)(enemyMinDamage * 1.3);
+                enemyMaxDamage = (int)(enemyMaxDamage * 1.3);
+                break;
+                
+            case "Royal Guard":
+                enemyHealth = (int)(enemyHealth * 1.2);
+                enemyMinDamage = (int)(enemyMinDamage * 1.2);
+                enemyMaxDamage = (int)(enemyMaxDamage * 1.2);
+                break;
+        }
+    }
+
+    private void applyAreaModifiers() {
+        // Chance for elite enemies increases with area difficulty\
+        double eliteChance = 0;
+        switch(currentArea) {
+            case "Green Meadows":
+                eliteChance = 0.05; // 5% chance
+                break;
+            case "Gloomy Caves":
+                eliteChance = 0.10; // 10% chance
+                break;
+            case "Zen's Castle":
+                eliteChance = 0.05; // 5% chance
+                break;
+         
+         
+        }
+        double shinyChance = 0;
+        switch(currentArea) {
+            case "Green Meadows":
+            	shinyChance = 0.01; // 1% chance
+                break;
+            case "Gloomy Caves":
+            	shinyChance = 0.01; // 1% chance
+                break;
+            case "Zen's Castle":
+            	shinyChance = 0.02; // 2% chance
+                break;
+        }
+        
+        
+        // Elite enemy generation
+        if (random.nextDouble() < eliteChance) {
+            enemyName = "Elite " + enemyName;
+            enemyHealth = (int)(enemyHealth * 1.3); // Used to be 1.5
+//          enemyMinDamage = (int)(enemyMinDamage * 1.3); // Scrapping enemy damage cuz its too broken ;(
+//          enemyMaxDamage = (int)(enemyMaxDamage * 1.3);
+            minCoins = (int)(minCoins * 2);
+            maxCoins = (int)(maxCoins * 2);
+            minExp = (int)(minExp * 1.5);
+            maxExp = (int)(maxExp * 1.5);
+        }
+        
+        if(random.nextDouble() < shinyChance) {
+        	enemyName = "✨ Shiny ✨ " + enemyName;
+        	minCoins = (int)(minCoins * 3.2);
+        	maxCoins = (int)(maxCoins * 2);
+        	minExp = (int)(minExp * 1.5);
+            maxExp = (int)(maxExp * 1.5);
+        }
+    }
+
+    // Update checkLevelUp method to handle new experience scaling
+    private void checkLevelUp() {
+        while (playerExperience >= experienceToNextLevel) {
+            playerLevel++;
+            playerExperience -= experienceToNextLevel;
+            
+            // Calculate new experience requirement based on level
+            if (playerLevel <= 5) {
+                experienceToNextLevel = 100 + (playerLevel * 10);
+            } else if (playerLevel <= 10) {
+                experienceToNextLevel = 150 + (playerLevel * 15);
+            } else if (playerLevel <= 15) {
+                experienceToNextLevel = 225 + (playerLevel * 20);
+            } else {
+                experienceToNextLevel = 300 + (playerLevel * 25);
+            }
+            
+            // Level up dialog and benefits
+            String[] options = {"Strength (+2 damage)", "Health (+" + healthUpAddition + " max health)"};
+            int choice = JOptionPane.showOptionDialog(this,
+                "Level Up! Choose your upgrade:",
+                "Level Up!",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+            if (choice == 0) {
+                minSwordDamage += 2;
+                maxSwordDamage += 2;
+                playerHealth = playerMaxHealth;
+                appendToLog("Your sword has become stronger!");
+            } else if (choice == 1) {
+                playerMaxHealth += healthUpAddition;
+                playerHealth = playerMaxHealth;
+                appendToLog("Your vitality has increased!");
+            }
+            
+            updateAll();
+            appendToLog("⭐ Congratulations! You've reached level " + playerLevel + "! ⭐");
+            appendToLog("You feel rejuvenated as your wounds heal...");
+        }
+    }
+
+    private void handleAttack() {
+        if (enemyHealth <= 0) return;
+
+        attackButton.setEnabled(false);
+
+
+        appendToLog("🗡️ You have slashed your sword! 🗡️");
+
+        // Just wanted to say simpson if you see this this code is bad and I dont like it
+        // Im probably gonna rework it soon
+        // I dont like the timers but the games feels like a clicking adventure if theyre gone
+        Timer playerAttackTimer = new Timer(combatAnimationSpeed, e -> {
+            int playerDamage = random.nextInt(maxSwordDamage - minSwordDamage + 1) + minSwordDamage;
+            enemyHealth -= playerDamage;
+            appendToLog("You have dealt ( ⚔︎ " + playerDamage + " ⚔︎ ) damage to the " + enemyName + ".");
+
+            if (enemyHealth <= 0) {
+                handleEnemyDefeat();
+            } else {
+                Timer miscTimer = new Timer(combatAnimationSpeed, ej -> {
+                	simulateEnemyAttack();
+                });
+                miscTimer.setRepeats(false);
+                miscTimer.start();
+                
+            }
+        });
+
+        playerAttackTimer.setRepeats(false);
+        playerAttackTimer.start();
+    }
+    // Originally these were both in the same code, the enemy attack and the player attack, but I think its more modular to have them seperate
+    private void simulateEnemyAttack() {
+        // Simulate enemy's counter-attack delay
+        appendToLog("🗡️ The " + enemyName + " is preparing to attack you! 🗡️");
+
+        Timer enemyAttackTimer = new Timer(combatAnimationSpeed, e -> {
+            int enemyDamage = random.nextInt(enemyMaxDamage - enemyMinDamage + 1) + enemyMinDamage;
+            enemyDamage -= armourAmount * 2;
+            playerHealth -= enemyDamage;
+            updateHealthBar();
+
+            appendToLog("The " + enemyName + " has dealt ( ⚡ " + enemyDamage + " ⚡ ) damage to you. ");
+            enemyLabel.setText("<html>" + enemyName + "<br>Health: " + enemyHealth + "<br>Damage: " + enemyMinDamage + "-" + enemyMaxDamage + "</html>");
+
+            if (playerHealth <= 0) {
+                handlePlayerDeath();
+            } else {
+                attackButton.setEnabled(true);
+            }
+        });
+
+        enemyAttackTimer.setRepeats(false);
+        enemyAttackTimer.start();
+    }
+
+
+    // I SO FUCKING ANGRY 静夜思
+    // 床前明月光，疑是地上霜。举头望明月， 低头思故乡 (as u can tell i dont like this code) (yes,... again)
+	private int coinsEarned;
+    private int expEarned;
+    
+    private void handleEnemyDefeat() {
+        // Disable combat and pause timers immediately upon defeat
+        setCombatButtonsEnabled(false);
+        inCombat = false;
+        walkTimer.stop();  // Pause walk timer
+        exploreTimer.stop(); // Stop the explore timer
+        
+        // Calculate rewards (Like a boss)
+        coinsEarned = random.nextInt(maxCoins - minCoins + 1) + minCoins;
+        expEarned = random.nextInt(maxExp - minExp + 1) + minExp;
+        
+        // Apply experience boost
+        if (playerExpBoost > 0) {
+            expEarned = (int)(expEarned * 1.5);
+            playerExpBoost--;
+        }
+        
+        Timer defeatSequence = new Timer(1000, new ActionListener() {
+            private int step = 0;
+            
+            @Override
+            
+            // Really cool step thing that I made, I would love to have this in the combat area.
+            public void actionPerformed(ActionEvent e) {
+                switch (step) {
+                    case 0:
+                        // Victory message
+                        appendToLog("You defeated the " + enemyName + "!");
+                        break;
+                        
+                    case 1:
+                        // Coins reward message
+                        appendToLog("• Earned " + coinsEarned + " coins!");
+                        playerCoins += coinsEarned;
+                        updateStats();
+                        break;
+                        
+                    case 2:
+                        // Experience reward message
+                        if (playerExpBoost > 0) {
+                            appendToLog("• Experience boost active!");
+                        }
+                        appendToLog("• Gained " + expEarned + " experience!");
+                        playerExperience += expEarned;
+                        updateExpBar();
+                        break;
+                        
+                    case 3:
+                        // Final updates
+                        checkLevelUp();
+                        
+                        String walkMessage = "👟 Walking through " + currentArea;
+                        // Add 1-3 dots randomly
+                        for (int i = 0; i < random.nextInt(3) + 1; i++) {
+                            walkMessage += ".";
+                        }
+                        appendToLog(walkMessage);
+                        enemyLabel.setText("No enemy present");
+                        shopButton.setEnabled(true);
+                        walkTimer.start();  // Resume walk timer
+                        exploreTimer.start(); // Restart the explore timer
+                        secondTickTracker = 0; // Reset the tick tracker
+                        
+                        // Stop the timer after last step
+                        ((Timer)e.getSource()).stop();
+                        break;
+                    case 4:
+                    	
+                }
+                step++;
+            }
+        });
+        
+        // Start the sequence
+        defeatSequence.start();
+    }
+
+    private void handleRun() {
+    	// Want to make this a 33/66 thing but I dont want it to suck so bad nobody uses
+    	// Made this a 33/66 thing, BUT, its in favor of the player 
+    	int randomRun = random.nextInt(3);
+    	randomRun++;
+    	if(randomRun > 1) {
+    		appendToLog("You ran away safely!");
+            setCombatButtonsEnabled(false);
+            enemyLabel.setText("No enemy present");
+            inCombat = false;
+            shopButton.setEnabled(true);             
+            // print statements to debug
+            System.out.println(randomRun);
+    	} else if(randomRun == 1){
+    		appendToLog("You attempted to run away but you tripped and fell!");
+    		System.out.println(randomRun);
+    		simulateEnemyAttack();
+    	}
+        
+    }
+
+    private void handleHeal() {
+        if (healthPotionCount > 0) {
+            if (playerHealth == playerMaxHealth) {
+                appendToLog("You are at max health!");
+            } else {
+                // New healing calculation: 20 + ((maxhealth / 10) * 1.5)
+                int baseHeal = 20;
+                int scalingHeal = (int)((playerMaxHealth / 10.0) * 1.5);
+                int healingAmount = baseHeal + scalingHeal;
+                
+                // Ensure we don't overheal
+                int actualHeal = Math.min(healingAmount, playerMaxHealth - playerHealth);
+                playerHealth += actualHeal;
+                healthPotionCount--;
+                updateHealthBar();
+                appendToLog("Used a health potion. Health restored by " + actualHeal + " to " + playerHealth);
+                healButton.setText("Heal " + "(" + healthPotionCount + ")");
+            }
+        } else {
+            appendToLog("No health potions available!");
+        }
+    }
+
+
+    private void handlePlayerDeath() {
+        isPlayerAlive = false;
+        appendToLog("You have been defeated by the " + enemyName + ".");
+        setCombatButtonsEnabled(false);
+        shopButton.setEnabled(false);
+        JOptionPane.showMessageDialog(this, "Game Over!", "Defeat", JOptionPane.INFORMATION_MESSAGE);
+        System.exit(0);
+    }
+    
+ 
+    private int[] shopPurchaseCounts = new int[5]; // Tracks purchases of each item
+    
+    // I dont even know what this shop code does, it just works and thats enough for me, also cool! modularity!
+    // Made this under a caffine overdose (2 whole monsters in one day)
+    private void openShop() {
+        if (inCombat) {
+            appendToLog("Can't open shop while in combat!");
+            return;
+        }
+
+        exploreTimer.stop(); // Pause exploration timer
+        walkTimer.stop();
+        JDialog shopDialog = new JDialog(this, "Shop", true);
+        shopDialog.setLayout(new BoxLayout(shopDialog.getContentPane(), BoxLayout.Y_AXIS));
+
+        // Coins display
+        JLabel coinsLabel = new JLabel("Your coins: " + playerCoins);
+        coinsLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        shopDialog.add(coinsLabel);
+        shopDialog.add(Box.createVerticalStrut(10));
+
+        // Create a button for each shop item
+        for (int i = 0; i < shopItemNames.length; i++) {
+            final int index = i;
+            int currentCost = (int)(shopItemCosts[i] * Math.pow(shopItemMultipliers[i], shopPurchaseCounts[i]));
+            
+            JButton itemButton = new JButton(shopItemNames[i] + " - " + currentCost + " coins");
+            itemButton.setToolTipText(shopItemDescriptions[i]);
+            itemButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+            
+            itemButton.addActionListener(e -> {
+            	
+            	
+                if (playerCoins >= currentCost) {
+                    playerCoins -= currentCost;
+                    shopPurchaseCounts[index]++;
+                    
+                    // Handle the purchase
+                    handleShopPurchase(index);
+                    // Update health potion so its accurate
+                	healButton.setText("Heal " + "(" + healthPotionCount + ")");
+                    
+                    // Update display
+                    coinsLabel.setText("Your coins: " + playerCoins);
+                    int newCost = (int)(shopItemCosts[index] * Math.pow(shopItemMultipliers[index], shopPurchaseCounts[index]));
+                    itemButton.setText(shopItemNames[index] + " - " + newCost + " coins");
+                    updateStats();
+                } else {
+                    appendToLog("Not enough coins for " + shopItemNames[index] + "!");
+                }
+            });
+            
+            shopDialog.add(itemButton);
+            shopDialog.add(Box.createVerticalStrut(5));
+        }
+
+        // Exit button
+        JButton exitButton = new JButton("Exit Shop");
+        exitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        exitButton.addActionListener(e -> shopDialog.dispose());
+        
+        shopDialog.add(Box.createVerticalStrut(10));
+        shopDialog.add(exitButton);
+
+        
+        
+        // So basically it checks if the window is closed and it starts the timers to discover things.
+        shopDialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                exploreTimer.start();
+                walkTimer.start();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                exploreTimer.start();
+                walkTimer.start();
+            }
+        });
+        shopDialog.pack();
+        shopDialog.setLocationRelativeTo(this);
+        shopDialog.setVisible(true);
+    }
+
+    private void handleShopPurchase(int itemIndex) {
+    	updateShop();
+        switch (itemIndex) {
+            case 0: // Health Potion
+                healthPotionCount++;
+                appendToLog("Bought a health potion! Total potions: " + healthPotionCount);
+                break;
+                
+            case 1: // Sword Upgrade
+                minSwordDamage += 2;
+                maxSwordDamage += 2;
+                appendToLog("Upgraded sword! New damage: " + minSwordDamage + "-" + maxSwordDamage);
+                break;
+                
+            case 2: // Max Health Up
+                playerMaxHealth += SHOP_HEALTH_INCREASE;
+                playerHealth += SHOP_HEALTH_INCREASE;
+                if (playerHealth >= playerMaxHealth) { playerHealth = playerMaxHealth; }
+                updateHealthBar();
+                appendToLog("Increased your max health by " + SHOP_HEALTH_INCREASE + " to " + playerMaxHealth + "!");
+                break;
+                
+            case 3: // Experience Boost
+                playerExpBoost += 3;
+                appendToLog("Bought an experience boost! You now have " + playerExpBoost + "!");
+                break;
+                
+            case 4: // Armor Piece
+            	boolean weakArmour;
+                int armorBoost = shopPurchaseCounts[4] <= MAX_STRONG_SHIELD_PURCHASES ? 
+                                SHIELD_STRONG_BOOST : SHIELD_WEAK_BOOST;
+                // doing this so that i can update the display
+                if (armorBoost == 2) {
+                	weakArmour = false;
+                	
+                }else if (armorBoost == 1) {
+                	weakArmour = true;
+                }
+                armourAmount += armorBoost;
+                appendToLog("Bought an armor piece! +" + armorBoost + " armor (Total: " + armourAmount + ")");
+                break;
+        }
+    }
+
+
+    private void triggerRandomEvent() {
+        int randomEvent = random.nextInt(7) + 1; // Updated to include new event
+        switch(randomEvent) {
+            case 1:
+                if (!ownedRelic) {
+                    appendToLog("You found an ancient artifact! Your sword damage increases.");
+                    minSwordDamage += 2;
+                    maxSwordDamage += 2;
+                    ownedRelic = true;
+                    updateStats();
+                } else {
+                    triggerRandomEvent();
+                }
+                break;
+            case 2:
+                int coinsFound = random.nextInt(20) + 12;
+                playerCoins += coinsFound;
+                appendToLog("You found a treasure chest! Earned " + coinsFound + " coins.");
+                updateStats();
+                break;
+            case 3:
+                appendToLog("Ouch! You have tripped and fell!");
+                int randomDamage = random.nextInt(3) + 1;
+                playerHealth -= randomDamage;
+                updateHealthBar();
+                break;
+            case 4:
+                if(playerCoins >= 10) {
+                    updateAll();
+                    initBeggar();
+                } else {
+                    triggerRandomEvent();
+                }
+                break;
+            case 5:
+                if (playerLevel >= 5 && random.nextInt(10) < 2) {
+                    dragonBossfight();
+                } else {
+                    appendToLog("You think you spotted a cave, but it was just a shadow...");
+                }
+                break;
+            case 6:
+                encounterCleric();
+                break;
+            default:
+                triggerRandomEvent(); // Reroll if we hit case 7
+                break;
+        }
+    }
+    private void encounterCleric() {
+        if (playerHealth < playerMaxHealth) {
+            int healAmount = (int)(playerMaxHealth * CLERIC_HEAL_PERCENT);
+            int oldHealth = playerHealth;
+            playerHealth = Math.min(playerMaxHealth, playerHealth + healAmount);
+            int actualHeal = playerHealth - oldHealth;
+            
+            appendToLog("✨ A wandering cleric offers to heal your wounds! ✨");
+            appendToLog("The cleric's magic restores " + actualHeal + " health!");
+            updateHealthBar();
+        } else {
+            appendToLog("A wandering cleric passes by, but you are already at full health.");
+        }
+    }
+    
+    private void dragonBossfight() {
+        inCombat = true;
+        shopButton.setEnabled(false);
+
+        enemyName = "🐉 Ancient Dragon 🐉";
+        int baseDragonHealth = 200;
+        int baseDragonMinDamage = 30;
+        int baseDragonMaxDamage = 40;
+        int dragonScaling = playerLevel * 8;
+
+        // gonna make some cool dragon ascii art
+        // wow hes breathing fire
+        									//   🔥			
+//        									🔥]{}		
+//        /-----__^    +        ____     🔥 { /                                      
+//        |    ----^-\_      --/ * \-__ [}}  🔥\]                                       
+//  +     \_    _=_   (_    ./ ,/----'/   { 🔥                                     
+//          \__    \   (_./  /                                               
+//       +      \__  --        \___----^__                                       
+//      🔥       _/   _                  \_                                     
+//       |    _/  __/ )\"\ _____   -=-     \  +                                  
+//       |\__/   /    ^ ^       \____ \ _   )                                   
+//        \___--"          +         \_____))                                  
+//    +                +    
+        
+        // wow isnt this cool
+        enemyHealth = baseDragonHealth + dragonScaling;
+        	enemyMinDamage = baseDragonMinDamage + (playerLevel / 2);
+        		enemyMaxDamage = baseDragonMaxDamage + (playerLevel / 2);
+
+        minCoins = playerLevel * 20;
+        maxCoins = minCoins + 50;
+        minExp = playerLevel * 30;
+        maxExp = minExp + 20;
+
+        enemyLabel.setText("<html>" + enemyName + "<br>Health: " + enemyHealth 
+            + "<br>Damage: " + enemyMinDamage + "-" + enemyMaxDamage + "</html>");
+        appendToLog("🔥 You hear a deafening roar as a mighty dragon appears!");
+        appendToLog("Prepare yourself for the fight of your life!");
+
+        setCombatButtonsEnabled(true);
+    }
+
+    
+        
+    private void initBeggar() {
+        String message = "You see an old man named Ephraim begging for coins... Do you choose to donate to him?";
+        String[] options = {"Donate 10 coins", "Ignore and walk away"};
+
+        int choice = JOptionPane.showOptionDialog(this,
+                message,
+                "A Beggar's Plea",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        if (choice == 0) { // Player chooses to donate
+            if (playerCoins >= 10) {
+                playerCoins -= 10; // Deduct 10 coins'
+                playerKarma++;
+                
+                // Setup coin flip on either if beggar will be mrbeast or a fraud or just a humble beggar
+                beggarlogic();
+                
+                updateAll();
+            } else {
+                appendToLog("You wanted to donate, but you don't have enough coins!");
+            }
+        } else if (choice == 1) { // Player ignores the beggar
+            appendToLog("You ignored the beggar and continued on your journey.");
+        }
+    }
+   
+  
+    private void beggarlogic() {
+    	int randomBeggar = random.nextInt(3); randomBeggar++;
+        switch (randomBeggar) {
+        case 1: 
+        	appendToLog("The beggar is actually rich! He has blessed you!");
+        	int gainedAmount = playerCoins / 5; // Add a fifth of your coins
+        	gainedAmount += 24;
+        	// Beggar logic goes like this: (playerCoins / 10) + 24
+        	
+        	appendToLog("You have gained " + gainedAmount + " Coins!");
+        	playerCoins += gainedAmount;
+        	updateAll();
+        	break;
+        case 2:
+        	if(random.nextInt(1) == 0) {
+        		appendToLog("The begger was a thief! He stole some of your coins and punched you!");
+            	int punchAmount = 2;
+            	
+            	playerCoins -= 4;
+            	playerHealth -= punchAmount;
+            	appendToLog("You have lost 4 coins!");
+            	appendToLog("He Punched you for " + punchAmount + " Health!");
+            	updateAll();
+            	break;
+        	}else{
+        		appendToLog("The beggar is actually rich! He has blessed you!");
+            	gainedAmount = playerCoins / 5; // Add a fifth of your coins
+            	gainedAmount += 24;
+            	// Beggar logic goes like this: (playerCoins / 10) + 24
+            	
+            	appendToLog("You have gained " + gainedAmount + " Coins!");
+            	playerCoins += gainedAmount;
+            	updateAll();
+            	break;
+        		        	}	
+        case 3:
+        	appendToLog("\"Good things await in your path young one...\"");
+        	appendToLog("The beggar humbly thanks you for your charitable donation");
+        	updateAll();
+        	break;
+        
+        }
+    }
+    
+    Boolean darkModeEnable;
+ // Add these methods to your main class
+    private void saveGame() {
+        Properties save = new Properties();
+        
+        // Save player stats
+        save.setProperty("playerName", playerName);
+        save.setProperty("playerLevel", String.valueOf(playerLevel));
+        save.setProperty("playerExperience", String.valueOf(playerExperience));
+        save.setProperty("experienceToNextLevel", String.valueOf(experienceToNextLevel));
+        save.setProperty("playerHealth", String.valueOf(playerHealth));
+        save.setProperty("playerMaxHealth", String.valueOf(playerMaxHealth));
+        save.setProperty("minSwordDamage", String.valueOf(minSwordDamage));
+        save.setProperty("maxSwordDamage", String.valueOf(maxSwordDamage));
+        save.setProperty("playerCoins", String.valueOf(playerCoins));
+        save.setProperty("healthPotionCount", String.valueOf(healthPotionCount));
+        save.setProperty("armourAmount", String.valueOf(armourAmount));
+        save.setProperty("playerKarma", String.valueOf(playerKarma));
+        save.setProperty("currentArea", currentArea);
+        save.setProperty("areaProgress", String.valueOf(areaProgress));
+        save.setProperty("ownedRelic", String.valueOf(ownedRelic));
+        save.setProperty("playerExpBoost", String.valueOf(playerExpBoost));
+        save.setProperty("difficulty", currentDifficulty);
+        save.setProperty("darkModeEnabled", String.valueOf(darkModeEnabled));
+
+
+        try (FileOutputStream out = new FileOutputStream("rpg_save.properties")) {
+            save.store(out, "RPG Save Data");
+            appendToLog("Game saved successfully!");
+        } catch (IOException e) {
+            appendToLog("Error saving game: " + e.getMessage()); // hope this doesnt do this XD
+        }
+    }
+    private void loadGame() {
+        Properties save = new Properties();
+        
+        try (FileInputStream in = new FileInputStream("rpg_save.properties")) {
+            save.load(in);
+            
+            // MY FINGER HURT
+            playerName = save.getProperty("playerName");
+            playerLevel = Integer.parseInt(save.getProperty("playerLevel"));
+            playerExperience = Integer.parseInt(save.getProperty("playerExperience"));
+            experienceToNextLevel = Integer.parseInt(save.getProperty("experienceToNextLevel"));
+            playerHealth = Integer.parseInt(save.getProperty("playerHealth"));
+            playerMaxHealth = Integer.parseInt(save.getProperty("playerMaxHealth"));
+            minSwordDamage = Integer.parseInt(save.getProperty("minSwordDamage"));
+            maxSwordDamage = Integer.parseInt(save.getProperty("maxSwordDamage"));
+            playerCoins = Integer.parseInt(save.getProperty("playerCoins"));
+            healthPotionCount = Integer.parseInt(save.getProperty("healthPotionCount"));
+            armourAmount = Integer.parseInt(save.getProperty("armourAmount"));
+            playerKarma = Integer.parseInt(save.getProperty("playerKarma"));
+            currentArea = save.getProperty("currentArea");
+            areaProgress = Integer.parseInt(save.getProperty("areaProgress"));
+            ownedRelic = Boolean.parseBoolean(save.getProperty("ownedRelic"));
+            playerExpBoost = Integer.parseInt(save.getProperty("playerExpBoost"));
+            darkModeEnabled = Boolean.parseBoolean(save.getProperty("darkModeEnable"));
+            setDifficulty(save.getProperty("difficulty"), true);
+            
+            
+            updateAll();
+            healButton.setText("Heal (" + healthPotionCount + ")");
+            appendToLog("Game loaded successfully!");
+            appendToLog("Welcome back, " + playerName + "!");
+            
+        } catch (FileNotFoundException e) {
+            appendToLog("No save file found.");
+        } catch (IOException e) {
+            appendToLog("Error loading game: " + e.getMessage());
+        }
+        applyTheme(darkModeEnabled);
+        
+    }		
+    
+    
+    private void updateHealthBar() {
+        healthBar.setMaximum(playerMaxHealth);
+        healthBar.setValue(Math.max(0, Math.min(playerHealth, playerMaxHealth)));
+        healthBar.setString("Health: " + playerHealth + "/" + playerMaxHealth);
+        
+        // Adjusting color based on health percentage
+        double healthPercentage = (double) playerHealth / playerMaxHealth;
+        if (healthPercentage > 0.5) {
+            healthBar.setForeground(Color.GREEN.darker());
+        } else if (healthPercentage > 0.2) {
+            healthBar.setForeground(Color.ORANGE.darker()); // All of this is darker cuz it looks bad without ty
+        } else {
+            healthBar.setForeground(Color.RED.darker());
+        }
+    }
+
+    private void updateExpBar() {
+        expBar.setMaximum(experienceToNextLevel);
+        expBar.setValue(Math.min(playerExperience, experienceToNextLevel));
+        expBar.setString("EXP: " + playerExperience + "/" + experienceToNextLevel);
+    }
+    private void updateAll () {
+    	updateStats();
+    	updateExpBar();
+    	updateHealthBar();
+    }
+    private void updateStats() {
+    	statsLabel.setText("Name: " + playerName + " | Level: " + playerLevel + " | Coins: " + playerCoins + " | Min / Max Damage: " + minSwordDamage + " / " + maxSwordDamage + " | Exp boosts: " + playerExpBoost + " | Armour: " + armourAmount + " | Current area: " + currentArea);
+    }
+
+    private void setCombatButtonsEnabled(boolean enabled) {
+        attackButton.setEnabled(enabled);
+        runButton.setEnabled(enabled);
+        healButton.setEnabled(healthPotionCount > 0);
+    }
+    private void appendToLog(String message) {
+        gameLog.append(message + "\n");
+        gameLog.setCaretPosition(gameLog.getDocument().getLength());
+    }
+    
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            aasdasdasdasdasd game = new aasdasdasdasdasd();
+            
+            // Check for save file
+            if (new File("rpg_save.properties").exists()) {
+                int choice = JOptionPane.showOptionDialog(game,
+                    "Would you like to load your saved game?",
+                    "Load Game",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new String[]{"Load Save", "New Game"},
+                    "Load Save");
+                    
+                if (choice == 0) {
+                    game.loadGame();
+                }
+            }
+            
+            game.setVisible(true);
+        });
+    }
+}
