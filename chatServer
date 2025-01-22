@@ -1,0 +1,68 @@
+import java.io.*;
+import java.net.*;
+
+public class ServerChat {
+    public static void main(String[] args) {
+        int port = 2118; // Port number for the server
+
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            System.out.println("Server is waiting for a client to connect...");
+
+            // Accept a connection from a client
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Client connected."); // Notify when a client connects
+
+            // Start a new thread to handle communication
+            new ClientHandler(clientSocket).start();
+        } catch (IOException e) {
+            // Print the stack trace to help debug the issue
+            System.err.println("Error occurred while running the server:");
+            e.printStackTrace(); // Show the exception details
+        }
+    }
+}
+
+// Thread class to handle client communication
+class ClientHandler extends Thread {
+    private Socket clientSocket;
+
+    public ClientHandler(Socket socket) {
+        this.clientSocket = socket; // Store the socket for communication
+    }
+
+    @Override
+    public void run() {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+
+            String userInput, receivedMessage;
+
+            // Chat loop
+            while (true) {
+                // Read message from the client
+                if (in.ready()) {
+                    receivedMessage = in.readLine(); // Wait for a message from the client
+                    if (receivedMessage.equalsIgnoreCase("exit")) break; // Exit chat if "exit" is received
+                    System.out.println("Client: " + receivedMessage); // Display the received message
+                }
+
+                // Check for user input from server
+                if (stdIn.ready()) {
+                    userInput = stdIn.readLine(); // Read input from server user
+                    out.println(userInput); // Send the input to the client
+                    if (userInput.equalsIgnoreCase("exit")) break; // Exit chat if "exit" is sent
+                }
+            }
+
+            // Clean up and close the client socket
+            clientSocket.close();
+            System.out.println("Chat closed."); // Notify that chat has ended
+        } catch (IOException e) {
+            // Print the stack trace to help debug the issue
+            System.err.println("Error occurred in client handler:");
+            e.printStackTrace(); // Show the exception details
+        }
+    }
+}
