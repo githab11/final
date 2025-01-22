@@ -1,0 +1,65 @@
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import java.awt.Font;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Random;
+
+public class Bingo {
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Bingo Test");
+        ArrayList<String> foo = new ArrayList<>();
+
+        // Add elements one by one
+        foo.add("B");
+        foo.add("I");
+        foo.add("N");
+        foo.add("G");
+        foo.add("O");
+
+        Random random = new Random();
+
+        // Use GridBagLayout and GridBagConstraints to center the button
+        frame.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        // Add Label first (above the button, in row 0)
+        JLabel BingoLabel = new JLabel("Bingo");
+        BingoLabel.setFont(new Font("Arial", Font.BOLD, 36)); // Set large font for the label
+        gbc.gridx = 0;  // Column 0
+        gbc.gridy = 0;  // Row 0 (first row)
+        gbc.anchor = GridBagConstraints.CENTER;  // Align center
+        frame.add(BingoLabel, gbc);
+
+        // Add Button (below the label, in row 1)
+        JButton button = new JButton("Generate a new Bingo Number");
+        button.setFont(new Font("Arial", Font.PLAIN, 24));  // Set large font for the button
+        button.setPreferredSize(new java.awt.Dimension(300, 80));  // Set larger size for the button
+        gbc.gridx = 0;  // Column 0
+        gbc.gridy = 1;  // Row 1 (second row)
+        gbc.anchor = GridBagConstraints.CENTER; // Align center
+        frame.add(button, gbc);
+
+        frame.setSize(400, 500);  // Adjust frame size if needed
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+        // ActionListener for the button
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                 // Get a random index from the list
+                int randomIndex = random.nextInt(foo.size());
+
+                // Get the random element from the list
+                String randomElement = foo.get(randomIndex);
+                int randomNumber = random.nextInt(99) + 1;
+                BingoLabel.setText(randomElement + randomNumber);
+            }
+        });
+    }
+}
