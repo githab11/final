@@ -1,0 +1,165 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.colorchooser.*;
+
+public class CrosshairApp {
+
+    private static Color fillColor = Color.YELLOW;
+    private static Color borderColor = Color.BLACK;
+    private static float transparency = 1.0f;
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame settingsFrame = new JFrame("Crosshair Settings");
+            settingsFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            settingsFrame.setSize(300, 300);
+            settingsFrame.setLayout(new FlowLayout());
+
+            // Sliders for block size, gap, and border thickness
+            JSlider blockSizeSlider = new JSlider(1, 20, 6);
+            blockSizeSlider.setMajorTickSpacing(5);
+            blockSizeSlider.setPaintTicks(true);
+            blockSizeSlider.setPaintLabels(true);
+
+            JSlider gapSlider = new JSlider(0, 20, 2);
+            gapSlider.setMajorTickSpacing(5);
+            gapSlider.setPaintTicks(true);
+            gapSlider.setPaintLabels(true);
+
+            JSlider borderSizeSlider = new JSlider(0, 5, 1);
+            borderSizeSlider.setMajorTickSpacing(1);
+            borderSizeSlider.setPaintTicks(true);
+            borderSizeSlider.setPaintLabels(true);
+
+            // Add color picker buttons
+            JButton fillColorButton = new JButton("Main Color");
+            JButton borderColorButton = new JButton("Border Color");
+            JButton transparencyButton = new JButton("Set Transparency");
+
+            // Add components to settings panel
+            settingsFrame.add(new JLabel("Block Size:"));
+            settingsFrame.add(blockSizeSlider);
+            settingsFrame.add(new JLabel("Gap:"));
+            settingsFrame.add(gapSlider);
+            settingsFrame.add(new JLabel("Border Size:"));
+            settingsFrame.add(borderSizeSlider);
+            settingsFrame.add(fillColorButton);
+            settingsFrame.add(borderColorButton);
+            settingsFrame.add(transparencyButton);
+
+            // Create the main crosshair panel and the overlay frame
+            CrosshairPanel crosshairPanel = new CrosshairPanel();
+            JFrame overlayFrame = new JFrame();
+            overlayFrame.setUndecorated(true);
+            overlayFrame.setAlwaysOnTop(true);
+            overlayFrame.setBackground(new Color(0, 0, 0, 0)); // Transparent background
+            overlayFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            overlayFrame.setSize(Toolkit.getDefaultToolkit().getScreenSize());
+            overlayFrame.setFocusableWindowState(false);
+            overlayFrame.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                        System.exit(0); // Close the application
+                    }
+                }
+            });
+            overlayFrame.add(crosshairPanel);
+            overlayFrame.setVisible(true);
+
+            // Set up color pickers
+            fillColorButton.addActionListener(e -> {
+                fillColor = JColorChooser.showDialog(settingsFrame, "Choose Fill Color", fillColor);
+            });
+
+            borderColorButton.addActionListener(e -> {
+                borderColor = JColorChooser.showDialog(settingsFrame, "Choose Border Color", borderColor);
+            });
+
+            transparencyButton.addActionListener(e -> {
+                String input = JOptionPane.showInputDialog(settingsFrame, "Enter Transparency (0.0 - 1.0):");
+                try {
+                    transparency = Float.parseFloat(input);
+                    if (transparency < 0.0f) transparency = 0.0f;
+                    if (transparency > 1.0f) transparency = 1.0f;
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(settingsFrame, "Invalid transparency value.");
+                }
+            });
+
+            // Apply button action
+            JButton applyButton = new JButton("Apply");
+            settingsFrame.add(applyButton);
+            
+            applyButton.addActionListener(e -> {
+                int blockSize = blockSizeSlider.getValue();
+                int gap = gapSlider.getValue();
+                int borderSize = borderSizeSlider.getValue();
+                crosshairPanel.updateCrosshair(blockSize, gap, borderSize, fillColor, borderColor, transparency);
+                overlayFrame.repaint();
+                System.out.println("Block Size: " + blockSize);
+                System.out.println("Gap: " + gap);
+                System.out.println("Trans: "+ transparency);
+                
+            });
+
+            settingsFrame.setVisible(true);
+        });
+    }
+}
+
+class CrosshairPanel extends JPanel {
+
+    private int blockSize = 4;
+    private int gap = 3;
+    private int borderSize = 1;
+    private Color fillColor = Color.YELLOW;
+    private Color borderColor = Color.BLACK;
+    private float transparency = 1.0f;
+
+    public CrosshairPanel() {
+        setOpaque(false); // Make panel transparent
+    }
+
+    public void updateCrosshair(int blockSize, int gap, int borderSize, Color fillColor, Color borderColor, float transparency) {
+        this.blockSize = blockSize;
+        this.gap = gap;
+        this.borderSize = borderSize;
+        this.fillColor = fillColor;
+        this.borderColor = borderColor;
+        this.transparency = transparency;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        // Enable anti-aliasing for smoother lines
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Apply transparency only to the blocks and borders
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, transparency));
+
+        // Get the center of the screen
+        int centerX = getWidth() / 2;
+        int centerY = getHeight() / 2;
+
+        // Draw the crosshair blocks with borders
+        drawBlock(g2d, centerX - blockSize - gap, centerY - blockSize / 2, blockSize, blockSize, fillColor, borderColor); // Left
+        drawBlock(g2d, centerX + gap, centerY - blockSize / 2, blockSize, blockSize, fillColor, borderColor); // Right
+        drawBlock(g2d, centerX - blockSize / 2, centerY - blockSize - gap, blockSize, blockSize, fillColor, borderColor); // Top
+        drawBlock(g2d, centerX - blockSize / 2, centerY + gap, blockSize, blockSize, fillColor, borderColor); // Bottom
+    }
+
+    private void drawBlock(Graphics2D g2d, int x, int y, int width, int height, Color fillColor, Color borderColor) {
+        // Draw border
+        g2d.setColor(borderColor);
+        g2d.fillRect(x - borderSize, y - borderSize, width + 2 * borderSize, height + 2 * borderSize);
+
+        // Draw filled block
+        g2d.setColor(fillColor);
+        g2d.fillRect(x, y, width, height);
+    }
+}
